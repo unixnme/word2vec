@@ -1,10 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import tqdm
 
 CORPUS_FILE = 'tiny_corpus.txt'
 NDIM = 100
 CONTEXT_SIZE = 3
+DEVICE = 'cuda:0'
 
 with open(CORPUS_FILE, 'r') as f:
     corpus = f.read().split()
@@ -27,12 +29,12 @@ class Word2Vec(nn.Module):
 
 losses = []
 loss_function = nn.CrossEntropyLoss()
-model = Word2Vec(len(vocab), NDIM, CONTEXT_SIZE)
+model = Word2Vec(len(vocab), NDIM, CONTEXT_SIZE).to(DEVICE)
 optimizer = optim.SGD(model.parameters(), lr=1e-3)
 
 for epoch in range(10):
     total_loss = 0
-    for context, target in trigrams:
+    for context, target in tqdm.tqdm(trigrams):
 
         # Step 1. Prepare the inputs to be passed to the model (i.e, turn the words
         # into integer indices and wrap them in tensors)
@@ -45,11 +47,11 @@ for epoch in range(10):
 
         # Step 3. Run the forward pass, getting log probabilities over next
         # words
-        log_probs = model(context_idxs)
+        log_probs = model(context_idxs.to(DEVICE))
 
         # Step 4. Compute your loss function. (Again, Torch wants the target
         # word wrapped in a tensor)
-        loss = loss_function(log_probs, torch.tensor([word2idx[target]], dtype=torch.long))
+        loss = loss_function(log_probs, torch.tensor([word2idx[target]], dtype=torch.long).to(DEVICE))
 
         # Step 5. Do the backward pass and update the gradient
         loss.backward()
